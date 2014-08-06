@@ -277,6 +277,7 @@ export class Pool<T> {
         return this.pause().then(() => {
             this.rejected = 0;
             this.fulfilled = 0;
+            this.pending = 0;
             this.total = 0;
             this._index = 0;
             this.tasksData = [];

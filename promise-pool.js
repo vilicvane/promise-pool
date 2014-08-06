@@ -211,6 +211,7 @@ var Pool = (function () {
         return this.pause().then(function () {
             _this.rejected = 0;
             _this.fulfilled = 0;
+            _this.pending = 0;
             _this.total = 0;
             _this._index = 0;
             _this.tasksData = [];

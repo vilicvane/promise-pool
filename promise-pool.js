@@ -1,15 +1,52 @@
-﻿var Q = require('q');
+﻿/*
+* Promise Pool v0.1.0
+*
+* By VILIC VANE
+* https://github.com/vilic
+*
+* Written in TypeScript
+* http://typescriptlang.org
+*/
+var Q = require('q');
 
 
 
+/**
+* tasks pool that manages concurrency.
+*/
 var Pool = (function () {
+    /**
+    * initialize a task pool.
+    * @param processor a function takes the data and index as parameters, should return a boolean promise indicates whether this task has been successfully accomplished.
+    * @param concurrency the concurrency of this task pool.
+    * @param endless defaults to false. indicates whether this task pool is endless, if so, tasks can still be added even after all previous tasks have been fulfilled.
+    * @param tasksData an initializing array of task data.
+    */
     function Pool(processor, concurrency, endless, tasksData) {
         if (typeof endless === "undefined") { endless = false; }
+        /**
+        * pending tasks data, will be removed from this array once the task starts.
+        */
         this.tasksData = [];
+        /**
+        * the number of successful tasks.
+        */
         this.fulfilled = 0;
+        /**
+        * the number of failed tasks.
+        */
         this.rejected = 0;
+        /**
+        * the number of pending tasks.
+        */
         this.pending = 0;
+        /**
+        * the number of completed tasks and pending tasks in total.
+        */
         this.total = 0;
+        /**
+        * defaults to 0, the number or retries that this task pool will take for every single task, could be Infinity.
+        */
         this.retries = 0;
         this._index = 0;
         this._currentConcurrency = 0;
@@ -38,6 +75,10 @@ var Pool = (function () {
         this._start();
     };
 
+    /**
+    * start tasks, return a promise that will be fulfilled after all tasks accomplish if endless is false.
+    * @param onProgress a callback that will be triggered every time when a single task is fulfilled.
+    */
     Pool.prototype.start = function (onProgress) {
         if (this._deferred) {
             if (this._pauseDeferred) {
@@ -128,6 +169,9 @@ var Pool = (function () {
         }
     };
 
+    /**
+    * pause tasks and return a promise that will be fulfilled after the running tasks accomplish. this will wait for running tasks to complete instead of aborting them.
+    */
     Pool.prototype.pause = function () {
         if (this._pauseDeferred) {
             if (!this._pauseDeferred.promise.isPending()) {
@@ -146,6 +190,9 @@ var Pool = (function () {
         return this._pauseDeferred.promise;
     };
 
+    /**
+    * resume tasks.
+    */
     Pool.prototype.resume = function () {
         if (!this._pauseDeferred) {
             console.warn('tasks are not paused.');
@@ -156,6 +203,9 @@ var Pool = (function () {
         this._start();
     };
 
+    /**
+    * pause tasks, then clear pending tasks data and reset counters. return a promise that will be fulfilled after resetting accomplish.
+    */
     Pool.prototype.reset = function () {
         var _this = this;
         return this.pause().then(function () {
@@ -172,4 +222,4 @@ var Pool = (function () {
     return Pool;
 })();
 exports.Pool = Pool;
-//# sourceMappingURL=pool.js.map
+//# sourceMappingURL=promise-pool.js.map

@@ -1,5 +1,5 @@
 ﻿/*
- * Pool v0.1.0
+ * Promise Pool v0.1.0
  * 
  * By VILIC VANE
  * https://github.com/vilic

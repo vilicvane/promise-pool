@@ -2,7 +2,7 @@
   "name": "promise-pool",
   "version": "0.1.3",
   "description": "just another simple task pool based on promise (Q).",
-  "main": "bin/promise-pool.js",
+  "main": "promise-pool.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

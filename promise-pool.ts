@@ -38,17 +38,14 @@ export interface IProgress {
  */
 export class Pool<T> {
     /**
-     * the max concurrency of this task pool.
+     * (get/set) the max concurrency of this task pool.
      */
     concurrency: number;
 
-    /**
-     * pending tasks data, will be removed from this array once the task starts.
-     */
-    tasksData: T[] = [];
+    private _tasksData: T[] = [];
 
     /**
-     * the processor function that handles tasks data. should return a boolean promise indicates whether this task has been successfully accomplished.
+     * (get/set) the processor function that handles tasks data. should return a boolean promise indicates whether this task has been successfully accomplished.
      */
     processor: (data: T, index: number) => Q.Promise<boolean>;
 
@@ -56,32 +53,32 @@ export class Pool<T> {
     private _pauseDeferred: Q.Deferred<void>;
 
     /**
-     * the number of successful tasks.
+     * (get) the number of successful tasks.
      */
     fulfilled: number = 0;
 
     /**
-     * the number of failed tasks.
+     * (get) the number of failed tasks.
      */
     rejected: number = 0;
 
     /**
-     * the number of pending tasks.
+     * (get) the number of pending tasks.
      */
     pending: number = 0;
 
     /**
-     * the number of completed tasks and pending tasks in total.
+     * (get) the number of completed tasks and pending tasks in total.
      */
     total: number = 0;
 
     /**
-     * indicates whether this task pool is endless, if so, tasks can still be added even after all previous tasks have been fulfilled.
+     * (get/set) indicates whether this task pool is endless, if so, tasks can still be added even after all previous tasks have been fulfilled.
      */
     endless: boolean;
 
     /**
-     * defaults to 0, the number or retries that this task pool will take for every single task, could be Infinity.
+     * (get/set) defaults to 0, the number or retries that this task pool will take for every single task, could be Infinity.
      */
     retries: number = 0;
 
@@ -111,12 +108,12 @@ export class Pool<T> {
      * add a data item.
      * @param taskData task data to add.
      */
-    add(taskData: T);
+    add(taskData: T): void;
     /**
      * add data items.
      * @param tasskData tasks data to add.
      */
-    add(tasksData: T[]);
+    add(tasksData: T[]): void;
     add(tasksData: any) {
         if (this._deferred && !this._deferred.promise.isPending()) {
             console.warn('all the tasks have been accomplished, reset the pool before adding new tasks.');
@@ -129,7 +126,7 @@ export class Pool<T> {
 
         this.total += tasksData.length;
         this.pending += tasksData.length;
-        this.tasksData = this.tasksData.concat(tasksData);
+        this._tasksData = this._tasksData.concat(tasksData);
 
         this._start();
     }
@@ -157,9 +154,9 @@ export class Pool<T> {
     }
 
     private _start() {
-        while (this._currentConcurrency < this.concurrency && this.tasksData.length) {
+        while (this._currentConcurrency < this.concurrency && this._tasksData.length) {
             this._currentConcurrency++;
-            this._process(this.tasksData.shift(), this._index++, this.retries);
+            this._process(this._tasksData.shift(), this._index++, this.retries);
         }
 
         if (!this.endless && !this._currentConcurrency) {
@@ -280,7 +277,7 @@ export class Pool<T> {
             this.pending = 0;
             this.total = 0;
             this._index = 0;
-            this.tasksData = [];
+            this._tasksData = [];
             this._deferred = null;
             this._pauseDeferred = null;
             this.onProgress = null;

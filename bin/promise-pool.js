@@ -24,28 +24,25 @@ var Pool = (function () {
     */
     function Pool(processor, concurrency, endless, tasksData) {
         if (typeof endless === "undefined") { endless = false; }
+        this._tasksData = [];
         /**
-        * pending tasks data, will be removed from this array once the task starts.
-        */
-        this.tasksData = [];
-        /**
-        * the number of successful tasks.
+        * (get) the number of successful tasks.
         */
         this.fulfilled = 0;
         /**
-        * the number of failed tasks.
+        * (get) the number of failed tasks.
         */
         this.rejected = 0;
         /**
-        * the number of pending tasks.
+        * (get) the number of pending tasks.
         */
         this.pending = 0;
         /**
-        * the number of completed tasks and pending tasks in total.
+        * (get) the number of completed tasks and pending tasks in total.
         */
         this.total = 0;
         /**
-        * defaults to 0, the number or retries that this task pool will take for every single task, could be Infinity.
+        * (get/set) defaults to 0, the number or retries that this task pool will take for every single task, could be Infinity.
         */
         this.retries = 0;
         this._index = 0;
@@ -70,7 +67,7 @@ var Pool = (function () {
 
         this.total += tasksData.length;
         this.pending += tasksData.length;
-        this.tasksData = this.tasksData.concat(tasksData);
+        this._tasksData = this._tasksData.concat(tasksData);
 
         this._start();
     };
@@ -96,9 +93,9 @@ var Pool = (function () {
     };
 
     Pool.prototype._start = function () {
-        while (this._currentConcurrency < this.concurrency && this.tasksData.length) {
+        while (this._currentConcurrency < this.concurrency && this._tasksData.length) {
             this._currentConcurrency++;
-            this._process(this.tasksData.shift(), this._index++, this.retries);
+            this._process(this._tasksData.shift(), this._index++, this.retries);
         }
 
         if (!this.endless && !this._currentConcurrency) {
@@ -214,7 +211,7 @@ var Pool = (function () {
             _this.pending = 0;
             _this.total = 0;
             _this._index = 0;
-            _this.tasksData = [];
+            _this._tasksData = [];
             _this._deferred = null;
             _this._pauseDeferred = null;
             _this.onProgress = null;

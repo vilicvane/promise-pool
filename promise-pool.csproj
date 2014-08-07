@@ -46,7 +46,7 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <TypeScriptTarget>ES5</TypeScriptTarget>
     <TypeScriptRemoveComments>false</TypeScriptRemoveComments>
-    <TypeScriptSourceMap>true</TypeScriptSourceMap>
+    <TypeScriptSourceMap>False</TypeScriptSourceMap>
     <TypeScriptModuleKind>commonjs</TypeScriptModuleKind>
     <TypeScriptOutDir>bin</TypeScriptOutDir>
   </PropertyGroup>
@@ -74,8 +74,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="bin\package.json" />
-    <Content Include="bin\promise-pool.js.map" />
-    <Content Include="bin\test\test.js.map" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TypeScript\Microsoft.TypeScript.targets" Condition="Exists('$(VSToolsPath)\TypeScript\Microsoft.TypeScript.targets')" />
 </Project>

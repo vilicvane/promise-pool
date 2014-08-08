@@ -2,10 +2,14 @@
 var promisePool = require('../promise-pool');
 
 var pool = new promisePool.Pool(function (taskDataId, index) {
-    var deferred = Q.defer();
+    if (Math.random() < 0.1) {
+        throw new Error('err 1');
+    }
 
-    setTimeout(function () {
-        deferred.resolve(true); // true for success
+    return Q.delay(Math.floor(Math.random() * 5000)).then(function () {
+        if (Math.random() < 0.1) {
+            throw new Error('err 2');
+        }
 
         if (index == 40) {
             console.log('pausing...');
@@ -16,18 +20,27 @@ var pool = new promisePool.Pool(function (taskDataId, index) {
                 pool.resume();
             });
         }
-    }, Math.floor(Math.random() * 5000));
 
-    return deferred.promise;
+        if (Math.random() < 0.1) {
+            return false;
+        } else {
+            return true;
+        }
+    });
 }, 20);
+
+pool.retries = 5;
 
 for (var i = 0; i < 100; i++) {
     pool.add(i);
 }
 
 pool.start(function (progress) {
-    console.log(progress.fulfilled + '/' + progress.total);
+    if (progress.success) {
+        console.log(progress.fulfilled + '/' + progress.total);
+    } else {
+        console.log('task ' + progress.index + ' failed with ' + (progress.error ? progress.error.message : 'no error') + ', ' + progress.retries + ' retries left.');
+    }
 }).then(function (result) {
     console.log('completed ' + result.total + ' tasks.');
 });
-//# sourceMappingURL=test.js.map

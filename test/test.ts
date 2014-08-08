@@ -2,32 +2,51 @@
 import promisePool = require('../promise-pool');
 
 var pool = new promisePool.Pool<number>((taskDataId, index) => {
-    var deferred = Q.defer<boolean>();
+    if (Math.random() < 0.1) {
+        throw new Error('err 1');
+    }
 
-    setTimeout(() => {
-        deferred.resolve(true); // true for success
+    return Q.delay(Math.floor(Math.random() * 5000)).then(function () {
+        if (Math.random() < 0.1) {
+            throw new Error('err 2');
+        }
 
         if (index == 40) {
             console.log('pausing...');
-            pool.pause().then(() => {
+            pool.pause().then(function () {
                 console.log('paused.');
-            }).delay(5000).then(() => {
+            }).delay(5000).then(function () {
                 console.log('resuming...');
                 pool.resume();
             });
         }
 
-    }, Math.floor(Math.random() * 5000));
-
-    return deferred.promise;
+        if (Math.random() < 0.1) {
+            return false;
+        }
+        else {
+            return true; // true for success
+        }
+    });
 }, 20);
+
+pool.retries = 5;
 
 for (var i = 0; i < 100; i++) {
     pool.add(i);
 }
 
 pool.start(progress => {
-    console.log(progress.fulfilled + '/' + progress.total);
+    if (progress.success) {
+        console.log(progress.fulfilled + '/' + progress.total);
+    }
+    else {
+        console.log(
+            'task ' + progress.index + ' failed with ' +
+            (progress.error ? progress.error.message : 'no error') + ', ' +
+            progress.retries + ' retries left.'
+        );
+    }
 }).then(result => {
     console.log('completed ' + result.total + ' tasks.');
-}); 
+});

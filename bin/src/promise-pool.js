@@ -220,4 +220,3 @@ var Pool = (function () {
     return Pool;
 })();
 exports.Pool = Pool;
-//# sourceMappingURL=promise-pool.js.map

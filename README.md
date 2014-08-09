@@ -31,13 +31,6 @@ var pool = new promisePool.Pool<number>((taskDataId, index) => {
                 pool.resume();
             });
         }
-
-        if (Math.random() < 0.1) {
-            return false;
-        }
-        else {
-            return true; // true for success
-        }
     });
 }, 20);
 

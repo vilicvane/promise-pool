@@ -1,5 +1,6 @@
 ﻿/*
-* Promise Pool v0.1.0
+* Promise Pool v0.1
+* https://github.com/vilic/promise-pool
 *
 * By VILIC VANE
 * https://github.com/vilic
@@ -7,7 +8,7 @@
 * Written in TypeScript
 * http://typescriptlang.org
 */
-var Q = require('q');
+var Q = require('q-retry');
 
 
 
@@ -45,6 +46,18 @@ var Pool = (function () {
         * (get/set) defaults to 0, the number or retries that this task pool will take for every single task, could be Infinity.
         */
         this.retries = 0;
+        /**
+        * (get/set) defaults to 0, interval (milliseconds) between each retries.
+        */
+        this.retryInterval = 0;
+        /**
+        * (get/set) defaults to Infinity, max retry interval when retry interval multiplier applied.
+        */
+        this.maxRetryInterval = Infinity;
+        /**
+        * (get/set) defaults to 1, the multiplier applies to interval after every retry.
+        */
+        this.retryIntervalMultiplier = 1;
         this._index = 0;
         this._currentConcurrency = 0;
         this.concurrency = concurrency;
@@ -95,7 +108,7 @@ var Pool = (function () {
     Pool.prototype._start = function () {
         while (this._currentConcurrency < this.concurrency && this._tasksData.length) {
             this._currentConcurrency++;
-            this._process(this._tasksData.shift(), this._index++, this.retries);
+            this._process(this._tasksData.shift(), this._index++);
         }
 
         if (!this.endless && !this._currentConcurrency) {
@@ -107,35 +120,29 @@ var Pool = (function () {
         }
     };
 
-    Pool.prototype._process = function (data, index, retries) {
+    Pool.prototype._process = function (data, index) {
         var _this = this;
-        Q.send(this, 'processor', data, index).then(function (success) {
-            if (success === false) {
-                if (retries) {
-                    _this._notifyProgress(index, false, null, retries);
-                    _this._process(data, index, retries - 1);
-                } else {
-                    _this.rejected++;
-                    _this.pending--;
-                    _this._notifyProgress(index, false, null, retries);
-                    _this._next();
-                }
-            } else {
-                _this.fulfilled++;
-                _this.pending--;
-                _this._notifyProgress(index, true, null, retries);
-                _this._next();
-            }
-        }).fail(function (err) {
+        Q.retry(function () {
+            return Q.invoke(_this, 'processor', data, index);
+        }, function (reason, retries) {
             if (retries) {
-                _this._notifyProgress(index, false, err, retries);
-                _this._process(data, index, retries - 1);
+                _this._notifyProgress(index, false, reason, retries);
             } else {
                 _this.rejected++;
                 _this.pending--;
-                _this._notifyProgress(index, false, err, retries);
+                _this._notifyProgress(index, false, reason, retries);
                 _this._next();
             }
+        }, {
+            limit: this.retries,
+            interval: this.retryInterval,
+            maxInterval: this.maxRetryInterval,
+            intervalMultiplier: this.retryIntervalMultiplier
+        }).then(function () {
+            _this.fulfilled++;
+            _this.pending--;
+            _this._notifyProgress(index, true, null, null);
+            _this._next();
         });
     };
 

@@ -1,5 +1,5 @@
 ﻿import Q = require('q');
-import promisePool = require('../promise-pool');
+import promisePool = require('../lib/promise-pool');
 
 var pool = new promisePool.Pool<number>((taskDataId, index) => {
     if (Math.random() < 0.1) {
@@ -20,15 +20,10 @@ var pool = new promisePool.Pool<number>((taskDataId, index) => {
                 pool.resume();
             });
         }
-
-        if (Math.random() < 0.1) {
-            return false;
-        }
-        else {
-            return true; // true for success
-        }
     });
 }, 20);
+
+console.log('round 1');
 
 pool.retries = 5;
 
@@ -36,7 +31,49 @@ for (var i = 0; i < 100; i++) {
     pool.add(i);
 }
 
-pool.start(progress => {
+pool.start(onProgress)
+    .then(result => {
+        console.log('completed ' + result.total + ' tasks.');
+        console.log('round 2');
+        return pool.reset();
+    })
+    .then(() => {
+        pool.retries = 0;
+
+        for (var i = 0; i < 100; i++) {
+            pool.add(i);
+        }
+
+        return pool.start(onProgress);
+    })
+    .then(result => {
+        console.log('completed ' + result.total + ' tasks.');
+        console.log('round 3 (endless)');
+        return pool.reset();
+    })
+    .then(() => {
+        pool.endless = true;
+
+        for (var i = 0; i < 20; i++) {
+            pool.add(i);
+        }
+
+        pool.start(progress => {
+            onProgress(progress);
+
+            if (progress.pending < Math.random() * 20) {
+                var count = Math.floor(Math.random() * 20);
+
+                for (var i = 0; i < 20; i++) {
+                    pool.add(i);
+                }
+
+                console.log('added ' + count + ' tasks.');
+            }
+        });
+    });
+
+function onProgress(progress: promisePool.IProgress) {
     if (progress.success) {
         console.log(progress.fulfilled + '/' + progress.total);
     }
@@ -47,6 +84,4 @@ pool.start(progress => {
             progress.retries + ' retries left.'
         );
     }
-}).then(result => {
-    console.log('completed ' + result.total + ' tasks.');
-});
+}

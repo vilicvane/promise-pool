@@ -1,5 +1,6 @@
 ﻿/*
- * Promise Pool v0.1.0
+ * Promise Pool v0.1
+ * https://github.com/vilic/promise-pool
  * 
  * By VILIC VANE
  * https://github.com/vilic
@@ -8,7 +9,7 @@
  * http://typescriptlang.org
  */
 
-import Q = require('q');
+import Q = require('q-retry');
 
 /**
  * interface for the final result.
@@ -45,9 +46,9 @@ export class Pool<T> {
     private _tasksData: T[] = [];
 
     /**
-     * (get/set) the processor function that handles tasks data. should return a boolean promise indicates whether this task has been successfully accomplished.
+     * (get/set) the processor function that handles tasks data.
      */
-    processor: (data: T, index: number) => Q.Promise<boolean>;
+    processor: (data: T, index: number) => Q.Promise<void>;
 
     private _deferred: Q.Deferred<IResult>;
     private _pauseDeferred: Q.Deferred<void>;
@@ -55,22 +56,22 @@ export class Pool<T> {
     /**
      * (get) the number of successful tasks.
      */
-    fulfilled: number = 0;
+    fulfilled = 0;
 
     /**
      * (get) the number of failed tasks.
      */
-    rejected: number = 0;
+    rejected = 0;
 
     /**
      * (get) the number of pending tasks.
      */
-    pending: number = 0;
+    pending = 0;
 
     /**
      * (get) the number of completed tasks and pending tasks in total.
      */
-    total: number = 0;
+    total = 0;
 
     /**
      * (get/set) indicates whether this task pool is endless, if so, tasks can still be added even after all previous tasks have been fulfilled.
@@ -80,9 +81,24 @@ export class Pool<T> {
     /**
      * (get/set) defaults to 0, the number or retries that this task pool will take for every single task, could be Infinity.
      */
-    retries: number = 0;
+    retries = 0;
 
-    private _index: number = 0;
+    /**
+     * (get/set) defaults to 0, interval (milliseconds) between each retries.
+     */
+    retryInterval = 0;
+
+    /**
+     * (get/set) defaults to Infinity, max retry interval when retry interval multiplier applied.
+     */
+    maxRetryInterval = Infinity;
+
+    /**
+     * (get/set) defaults to 1, the multiplier applies to interval after every retry.
+     */
+    retryIntervalMultiplier = 1;
+
+    private _index = 0;
     private _currentConcurrency = 0;
 
     onProgress: (progress: IProgress) => void;
@@ -94,7 +110,7 @@ export class Pool<T> {
      * @param endless defaults to false. indicates whether this task pool is endless, if so, tasks can still be added even after all previous tasks have been fulfilled.
      * @param tasksData an initializing array of task data.
      */
-    constructor(processor: (data: T, index: number) => Q.Promise<boolean>, concurrency: number, endless = false, tasksData?: T[]) {
+    constructor(processor: (data: T, index: number) => Q.Promise<void>, concurrency: number, endless = false, tasksData?: T[]) {
         this.concurrency = concurrency;
         this.processor = processor;
         this.endless = endless;
@@ -156,7 +172,7 @@ export class Pool<T> {
     private _start() {
         while (this._currentConcurrency < this.concurrency && this._tasksData.length) {
             this._currentConcurrency++;
-            this._process(this._tasksData.shift(), this._index++, this.retries);
+            this._process(this._tasksData.shift(), this._index++);
         }
 
         if (!this.endless && !this._currentConcurrency) {
@@ -168,39 +184,33 @@ export class Pool<T> {
         }
     }
 
-    private _process(data: T, index: number, retries: number) {
-        Q.send<boolean>(this, 'processor', data, index).then(success => {
-            if (success === false) {
+    private _process(data: T, index: number) {
+        Q
+            .retry(() => {
+                return Q
+                    .invoke<void>(this, 'processor', data, index);
+            }, (reason, retries) => {
                 if (retries) {
-                    this._notifyProgress(index, false, null, retries);
-                    this._process(data, index, retries - 1);
+                    this._notifyProgress(index, false, reason, retries);
                 }
                 else {
                     this.rejected++;
                     this.pending--;
-                    this._notifyProgress(index, false, null, retries);
+                    this._notifyProgress(index, false, reason, retries);
                     this._next();
                 }
-            }
-            else {
+            }, {
+                limit: this.retries,
+                interval: this.retryInterval,
+                maxInterval: this.maxRetryInterval,
+                intervalMultiplier: this.retryIntervalMultiplier
+            })
+            .then(() => {
                 this.fulfilled++;
                 this.pending--;
-                this._notifyProgress(index, true, null, retries);
+                this._notifyProgress(index, true, null, null);
                 this._next();
-            }
-
-        }).fail(err => {
-            if (retries) {
-                this._notifyProgress(index, false, err, retries);
-                this._process(data, index, retries - 1);
-            }
-            else {
-                this.rejected++;
-                this.pending--;
-                this._notifyProgress(index, false, err, retries);
-                this._next();
-            }
-        });
+            });
     }
 
     private _notifyProgress(index: number, success: boolean, err: any, retries: number) {

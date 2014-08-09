@@ -1,6 +1,6 @@
 {
   "name": "promise-pool",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "just another simple task pool based on promise (Q).",
   "main": "promise-pool.js",
   "scripts": {
@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/vilic/promise-pool",
   "dependencies": {
-    "q": "^1.0.1"
+    "q": "1.x",
+    "q-retry": ">= 0.1.4"
   }
 }

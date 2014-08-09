@@ -48,7 +48,7 @@ export class Pool<T> {
     /**
      * (get/set) the processor function that handles tasks data.
      */
-    processor: (data: T, index: number) => Q.Promise<void>;
+    processor: (data: T, index: number) => Q.IPromise<void>;
 
     private _deferred: Q.Deferred<IResult>;
     private _pauseDeferred: Q.Deferred<void>;
@@ -110,7 +110,7 @@ export class Pool<T> {
      * @param endless defaults to false. indicates whether this task pool is endless, if so, tasks can still be added even after all previous tasks have been fulfilled.
      * @param tasksData an initializing array of task data.
      */
-    constructor(processor: (data: T, index: number) => Q.Promise<void>, concurrency: number, endless = false, tasksData?: T[]) {
+    constructor(processor: (data: T, index: number) => Q.IPromise<void>, concurrency: number, endless = false, tasksData?: T[]) {
         this.concurrency = concurrency;
         this.processor = processor;
         this.endless = endless;

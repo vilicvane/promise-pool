@@ -77,7 +77,7 @@ Pool<T>
 
 ```typescript
 // initialize a task pool.
-constructor(processor: (data: T, index: number) => Q.Promise<boolean>, concurrency: number, endless = false, tasksData?: T[]);
+constructor(processor: (data: T, index: number) => Q.Promise<void>, concurrency: number, endless = false, tasksData?: T[]);
 ```
 
 #### Methods
@@ -108,8 +108,8 @@ reset(): Q.Promise<void>;
 // (get/set) the max concurrency of this task pool.
 concurrency: number;
 
-// (get/set) the processor function that handles tasks data. should return a boolean promise indicates whether this task has been successfully accomplished.
-processor: (data: T, index: number) => Q.Promise<boolean>;
+// (get/set) the processor function that handles tasks data.
+processor: (data: T, index: number) => Q.Promise<void>;
 
 // (get) the number of successful tasks.
 fulfilled: number;
@@ -129,6 +129,36 @@ endless: boolean;
 // (get/set) defaults to 0, the number or retries that this task pool will take for every single task, could be Infinity.
 retries: number;
 
+// (get/set) defaults to 0, interval (milliseconds) between each retries.
+retryInterval: number;
+
+// (get/set) defaults to Infinity, max retry interval when retry interval multiplier applied.
+maxRetryInterval: number;
+
+// (get/set) defaults to 1, the multiplier applies to interval after every retry.
+retryIntervalMultiplier: number;
+
 // (get/set) a callback that will be triggered every time when a single task is fulfilled.
 onProgress: (progress: IProgress) => void;
+```
+
+### IProgress
+
+```typescript
+index: number;
+success: boolean;
+error: any;
+retries: number;
+fulfilled: number;
+rejected: number;
+pending: number;
+total: number;
+```
+
+### IResult
+
+```typescript
+fulfilled: number;
+rejected: number;
+total: number;
 ```

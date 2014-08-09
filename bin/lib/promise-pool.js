@@ -18,7 +18,7 @@ var Q = require('q-retry');
 var Pool = (function () {
     /**
     * initialize a task pool.
-    * @param processor a function takes the data and index as parameters, should return a boolean promise indicates whether this task has been successfully accomplished.
+    * @param processor a function takes the data and index as parameters and returns a promise.
     * @param concurrency the concurrency of this task pool.
     * @param endless defaults to false. indicates whether this task pool is endless, if so, tasks can still be added even after all previous tasks have been fulfilled.
     * @param tasksData an initializing array of task data.

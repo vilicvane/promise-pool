@@ -23,7 +23,6 @@
   },
   "homepage": "https://github.com/vilic/promise-pool",
   "peerDependencies": {
-    "q": "*",
     "q-retry": ">= 0.1.5"
   }
 }

@@ -22,8 +22,8 @@
     "url": "https://github.com/vilic/promise-pool/issues"
   },
   "homepage": "https://github.com/vilic/promise-pool",
-  "dependencies": {
-    "q": "1.x",
-    "q-retry": ">= 0.1.4"
+  "peerDependencies": {
+    "q": "*",
+    "q-retry": ">= 0.1.5"
   }
 }

@@ -103,6 +103,8 @@ export class Pool<T> {
 
     onProgress: (progress: IProgress) => void;
 
+    private _progressError: Error = null;
+
     /**
      * initialize a task pool.
      * @param processor a function takes the data and index as parameters and returns a promise.
@@ -170,6 +172,10 @@ export class Pool<T> {
     }
 
     private _start() {
+        if (this._checkProgressError()) {
+            return;
+        }
+
         while (this._currentConcurrency < this.concurrency && this._tasksData.length) {
             this._currentConcurrency++;
             this._process(this._tasksData.shift(), this._index++);
@@ -214,8 +220,8 @@ export class Pool<T> {
     }
 
     private _notifyProgress(index: number, success: boolean, err: any, retries: number) {
-        if (typeof this.onProgress == 'function') {
-            this.onProgress({
+        if (!this._progressError && typeof this.onProgress == 'function') {
+            var progress = {
                 success: success,
                 error: err,
                 retries: retries,
@@ -224,7 +230,12 @@ export class Pool<T> {
                 rejected: this.rejected,
                 pending: this.pending,
                 total: this.total
-            });
+            };
+            try {
+                this.onProgress(progress);
+            } catch (e) {
+                this._progressError = e;
+            }
         }
     }
 
@@ -239,6 +250,16 @@ export class Pool<T> {
         else {
             this._start();
         }
+    }
+
+    private _checkProgressError() {
+        if (!this._progressError) {
+            return false;
+        }
+        if (this._deferred.promise.isPending()) {
+            this._deferred.reject(this._progressError);
+        }
+        return true;
     }
 
     /**
@@ -291,6 +312,7 @@ export class Pool<T> {
             this._deferred = null;
             this._pauseDeferred = null;
             this.onProgress = null;
+            this._progressError = null;
         });
     }
 }

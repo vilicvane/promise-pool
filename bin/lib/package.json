@@ -1,6 +1,6 @@
 {
   "name": "promise-pool",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "just another simple task pool based on promise (Q).",
   "main": "promise-pool.js",
   "scripts": {

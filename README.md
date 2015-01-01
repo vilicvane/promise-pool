@@ -17,21 +17,27 @@ var pool = new promisePool.Pool<number>((taskDataId, index) => {
         throw new Error('err 1');
     }
 
-    return Q.delay(Math.floor(Math.random() * 5000)).then(function () {
-        if (Math.random() < 0.1) {
-            throw new Error('err 2');
-        }
+    return Q
+        .delay(Math.floor(Math.random() * 5000))
+        .then(function () {
+            if (Math.random() < 0.1) {
+                throw new Error('err 2');
+            }
 
-        if (index == 40) {
-            console.log('pausing...');
-            pool.pause().then(function () {
-                console.log('paused.');
-            }).delay(5000).then(function () {
-                console.log('resuming...');
-                pool.resume();
-            });
-        }
-    });
+            if (index == 40) {
+                console.log('pausing...');
+                pool
+                    .pause()
+                    .then(function () {
+                        console.log('paused.');
+                    })
+                    .delay(5000)
+                    .then(function () {
+                        console.log('resuming...');
+                        pool.resume();
+                    });
+            }
+        });
 }, 20);
 
 pool.retries = 5;
@@ -40,20 +46,22 @@ for (var i = 0; i < 100; i++) {
     pool.add(i);
 }
 
-pool.start(progress => {
-    if (progress.success) {
-        console.log(progress.fulfilled + '/' + progress.total);
-    }
-    else {
-        console.log(
-            'task ' + progress.index + ' failed with ' +
-            (progress.error ? progress.error.message : 'no error') + ', ' +
-            progress.retries + ' retries left.'
-        );
-    }
-}).then(result => {
-    console.log('completed ' + result.total + ' tasks.');
-});
+pool
+    .start(progress => {
+        if (progress.success) {
+            console.log(progress.fulfilled + '/' + progress.total);
+        }
+        else {
+            console.log(
+                'task ' + progress.index + ' failed with ' +
+                (progress.error ? progress.error.message : 'no error') + ', ' +
+                progress.retries + ' retries left.'
+            );
+        }
+    })
+    .then(result => {
+        console.log('completed ' + result.total + ' tasks.');
+    });
 ```
 
 ## API
@@ -83,6 +91,7 @@ add(taskData: T): void;
 add(tasksData: T[]): void;
 
 // start tasks, return a promise that will be fulfilled after all tasks accomplish if endless is false.
+// if an error has been thrown in onProgress, this promise will be rejected.
 start(onProgress?: (progress: IProgress) => void): Q.Promise<IResult>;
 
 // pause tasks and return a promise that will be fulfilled after the running tasks accomplish. this will wait for running tasks to complete instead of aborting them.

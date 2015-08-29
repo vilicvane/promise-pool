@@ -76,7 +76,12 @@ var Pool = (function () {
         this.total += tasksData.length;
         this.pending += tasksData.length;
         this._tasksData = this._tasksData.concat(tasksData);
-        this._start();
+        /**
+        * try to start a task if the pool is not paused.
+        */
+        if (!this._pauseDeferred) {
+            this._start();
+        }
     };
     /**
      * start tasks, return a promise that will be fulfilled after all tasks accomplish if endless is false.
@@ -116,8 +121,10 @@ var Pool = (function () {
     };
     Pool.prototype._process = function (data, index) {
         var _this = this;
-        Q.retry(function () {
-            return Q.invoke(_this, 'processor', data, index);
+        Q
+            .retry(function () {
+            return Q
+                .invoke(_this, 'processor', data, index);
         }, function (reason, retries) {
             if (retries) {
                 _this._notifyProgress(index, false, reason, retries);
@@ -133,7 +140,8 @@ var Pool = (function () {
             interval: this.retryInterval,
             maxInterval: this.maxRetryInterval,
             intervalMultiplier: this.retryIntervalMultiplier
-        }).then(function () {
+        })
+            .then(function () {
             _this.fulfilled++;
             _this.pending--;
             _this._notifyProgress(index, true, null, null);

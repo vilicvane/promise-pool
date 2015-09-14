@@ -145,9 +145,10 @@ export class Pool<T> {
         this.total += tasksData.length;
         this.pending += tasksData.length;
         this._tasksData = this._tasksData.concat(tasksData);
+        
         /**
-        * try to start a task if the pool is not paused.
-        */
+         * try to start a task if the pool is not paused.
+         */
         if (!this._pauseDeferred) { 
             this._start();
         }
